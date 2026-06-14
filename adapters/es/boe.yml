@@ -1,0 +1,82 @@
+country: es
+source: boe
+
+fetch:
+  type: rest_json
+  base_url: "https://www.boe.es/datosabiertos/api"
+  daily_index_endpoint: "/sumario/{date}"
+  document_endpoint: "/documento/{id}"
+  rate_limit_rps: 2.0
+  index_id_path:
+    root: "data.sumario.diario"
+    nest:
+      - "seccion"
+      - "departamento"
+      - "epigrafe"
+      - "item"
+    id_field: "id"
+  doc_fields:
+    norm_id:      "data.documento.metadatos.identificador"
+    title:        "data.documento.metadatos.titulo"
+    date_pub:     "data.documento.metadatos.fecha_publicacion"
+    raw_status:   "data.documento.metadatos.estatus_derogacion"
+    rango:        "data.documento.metadatos.rango"
+    departamento: "data.documento.metadatos.departamento"
+    body_html:    "data.documento.texto"
+    refs_before:  "data.documento.analisis.referencias.anteriores"
+    refs_after:   "data.documento.analisis.referencias.posteriores"
+  refs_before_key: "refs_before"
+  refs_after_key: "refs_after"
+  ref_item_key: "referencia"
+  ref_source_term_field: "texto"
+  ref_target_id_field: "id"
+
+parse:
+  type: html
+  article_selector: "p.articulo"
+  article_title_selector: "span.titulo_articulo"
+  preamble_selectors:
+    - "p.parrafo_1"
+    - "p.preambulo"
+    - "p.exposicion_motivos"
+  provision_selectors:
+    disposicion_adicional: "additional"
+    disposicion_transitoria: "transitional"
+    disposicion_derogatoria: "repealing"
+    disposicion_final: "final"
+  annex_selector: "p.anexo"
+
+norm_type_field: "rango"
+status_field: "raw_status"
+
+norm_types:
+  "Ley":                      "act"
+  "Ley Orgánica":             "act"
+  "Real Decreto Legislativo": "act"
+  "Real Decreto-ley":         "regulation"
+  "Real Decreto":             "regulation"
+  "Orden":                    "order"
+  "Orden Ministerial":        "order"
+  "Resolución":               "resolution"
+  "Decreto":                  "decree"
+  "Decisión":                 "decision"
+
+relationship_types:
+  "modifica":           "AMENDS"
+  "queda modificado":   "AMENDS"
+  "deroga":             "REPEALS"
+  "queda derogado":     "REPEALS"
+  "cita":               "CITES"
+  "hace referencia":    "CITES"
+  "desarrolla":         "IMPLEMENTS"
+  "transpone":          "IMPLEMENTS"
+  "ejecuta":            "IMPLEMENTS"
+
+status_mapping:
+  "En vigor":                   "in_force"
+  "Vigente":                    "in_force"
+  "Vigente con modificaciones": "in_force"
+  "Derogado":                   "repealed"
+  "Derogada":                   "repealed"
+  "Derogado parcialmente":      "partially_repealed"
+  "Derogada parcialmente":      "partially_repealed"

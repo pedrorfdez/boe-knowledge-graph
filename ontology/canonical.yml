@@ -1,0 +1,20 @@
+norm_types:
+  - act
+  - bill
+  - amendment
+  - regulation
+  - order
+  - resolution
+  - decree
+  - decision
+
+relationship_types:
+  - AMENDS
+  - REPEALS
+  - CITES
+  - IMPLEMENTS
+
+statuses:
+  - in_force
+  - repealed
+  - partially_repealed
