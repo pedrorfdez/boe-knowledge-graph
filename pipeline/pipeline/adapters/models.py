@@ -1,11 +1,11 @@
 from __future__ import annotations
 from typing import Any, Literal
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 
 class IndexIdPath(BaseModel):
     root: str
-    nest: list[str]
+    nest: list[str] = Field(min_length=1)
     id_field: str
 
 
@@ -30,7 +30,7 @@ class ParseConfig(BaseModel):
     article_title_selector: str
     preamble_selectors: list[str]
     provision_selectors: dict[str, str]
-    annex_selector: str
+    annex_selector: str | None = None
 
 
 class SourceAdapter(BaseModel):
@@ -44,14 +44,14 @@ class SourceAdapter(BaseModel):
     relationship_types: dict[str, str]
     status_mapping: dict[str, str]
 
-    model_config = {"arbitrary_types_allowed": True}
-
     @model_validator(mode="before")
     @classmethod
     def validate_against_canonical(cls, values: Any) -> Any:
         if not isinstance(values, dict):
             return values
         canonical = values.pop("_canonical", {})
+        # Validation is opt-in: load_adapter() always injects _canonical.
+        # Direct construction without _canonical (e.g. in unit tests) skips vocab checks.
         if not canonical:
             return values
         for field, canon_key in [

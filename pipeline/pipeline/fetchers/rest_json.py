@@ -1,8 +1,11 @@
 from __future__ import annotations
+import logging
 from typing import Any
 import jmespath
 import httpx
 from pipeline.adapters.models import FetchConfig
+
+logger = logging.getLogger(__name__)
 
 
 def _ensure_list(val: Any) -> list:
@@ -20,7 +23,8 @@ def fetch_index_ids(client: httpx.Client, config: FetchConfig, date_str: str) ->
         r = client.get(url, timeout=30)
         r.raise_for_status()
         data = r.json()
-    except Exception:
+    except Exception as e:
+        logger.warning("Failed to fetch index for %s: %s", date_str, e)
         return []
 
     id_path = config.index_id_path
@@ -50,7 +54,8 @@ def fetch_document_raw(client: httpx.Client, config: FetchConfig, doc_id: str) -
         r = client.get(url, timeout=30)
         r.raise_for_status()
         return r.json()
-    except Exception:
+    except Exception as e:
+        logger.warning("Failed to fetch document %s: %s", doc_id, e)
         return None
 
 

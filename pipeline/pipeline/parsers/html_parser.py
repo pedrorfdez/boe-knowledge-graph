@@ -62,14 +62,18 @@ def parse_html(html: str, config: ParseConfig) -> dict[str, Any]:
             })
 
     # Annexes
-    annexes: list[dict] = [
-        {
-            "annex_id": f"annex-{i}",
-            "title": tag.get_text(strip=True)[:100],
-            "text": tag.get_text(separator=" ", strip=True),
-        }
-        for i, tag in enumerate(soup.select(config.annex_selector), 1)
-    ]
+    annexes: list[dict] = (
+        [
+            {
+                "annex_id": f"annex-{i}",
+                "title": tag.get_text(strip=True)[:100],
+                "text": tag.get_text(separator=" ", strip=True),
+            }
+            for i, tag in enumerate(soup.select(config.annex_selector), 1)
+        ]
+        if config.annex_selector
+        else []
+    )
 
     # Preamble — text from configured selectors
     preamble_parts = [

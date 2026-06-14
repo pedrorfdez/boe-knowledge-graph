@@ -105,6 +105,41 @@ def test_adapter_rejects_unknown_relationship_type():
         )
 
 
+def test_adapter_rejects_unknown_status():
+    from pipeline.adapters.models import SourceAdapter, FetchConfig, ParseConfig, IndexIdPath
+    with pytest.raises(ValidationError, match="Unknown status_mapping"):
+        SourceAdapter(
+            country="es",
+            source="test",
+            fetch=FetchConfig(
+                type="rest_json",
+                base_url="http://example.com",
+                daily_index_endpoint="/index/{date}",
+                document_endpoint="/doc/{id}",
+                index_id_path=IndexIdPath(root="data", nest=["items"], id_field="id"),
+                doc_fields={"norm_id": "data.id"},
+            ),
+            parse=ParseConfig(
+                type="html",
+                article_selector="p.articulo",
+                article_title_selector="span.titulo",
+                preamble_selectors=["p.preambulo"],
+                provision_selectors={},
+                annex_selector="p.anexo",
+            ),
+            norm_type_field="rango",
+            status_field="raw_status",
+            norm_types={"Ley": "act"},
+            relationship_types={"modifica": "AMENDS"},
+            status_mapping={"En vigor": "active"},  # invalid — not in canonical statuses
+            _canonical={
+                "norm_types": ["act"],
+                "relationship_types": ["AMENDS"],
+                "statuses": ["in_force"],
+            },
+        )
+
+
 def test_adapter_maps_ley_organica_to_act():
     from pipeline.adapters.loader import load_adapter
     adapter = load_adapter(ADAPTERS_DIR / "es" / "boe.yml", ONTOLOGY_DIR / "canonical.yml")

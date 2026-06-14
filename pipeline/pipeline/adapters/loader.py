@@ -4,6 +4,8 @@ from pipeline.adapters.models import SourceAdapter
 
 
 def load_canonical(canonical_path: Path) -> dict[str, list[str]]:
+    if not canonical_path.exists():
+        raise FileNotFoundError(f"Canonical vocabulary not found: {canonical_path}")
     with open(canonical_path) as f:
         return yaml.safe_load(f)
 
