@@ -14,7 +14,7 @@ COPY pipeline/ pipeline/
 # Place dagster config in DAGSTER_HOME (Docker auto-creates the directory)
 COPY dagster.yaml /opt/dagster/dagster_home/dagster.yaml
 
-RUN uv pip install --system -e .
+RUN uv pip install --system -e ".[dev]"
 
 # Download spaCy Spanish model
 RUN python -m spacy download es_core_news_sm
