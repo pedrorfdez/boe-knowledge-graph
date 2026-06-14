@@ -108,8 +108,8 @@ articles             ARRAY<STRUCT<
                        article_num   STRING
                        text          STRING
                      >>
-disposiciones        ARRAY<STRUCT<
-                       type          STRING   adicional | transitoria | derogatoria | final
+provisions           ARRAY<STRUCT<
+                       type          STRING   additional | transitional | repealing | final
                        num           STRING
                        text          STRING
                      >>
@@ -119,10 +119,10 @@ annexes              ARRAY<STRUCT<
                        text          STRING
                      >>
 raw_relationships    ARRAY<STRUCT<
-                       source_term   STRING   modifica | deroga | cita
+                       source_term   STRING   raw term from source: modifica | deroga | cita
                        target_id     STRING
                      >>
-raw_status           STRING         En vigor | Derogada | ...
+raw_status           STRING         raw status term from source before mapping
 ner_entities         ARRAY<STRUCT<
                        entity_type   STRING   ministry | territory | norm_reference
                        value         STRING
@@ -138,6 +138,8 @@ silver/es/boe/year=2024/month=01/day=15/norms.parquet
 ### Gold
 
 Delta Lake table, partitioned by `(country, year, month, day)`. Country-agnostic schema — all sources converge here. Gold is the only input to Neo4j, Qdrant, and Elasticsearch.
+
+> **Schema stability note:** the fields below are the confirmed minimum needed for the four briefings and the graph UI. They will be present from day one. Additional fields will be added via Delta Lake `ALTER TABLE ADD COLUMN` as the BOE API is explored and new countries are added — no historical data is rewritten. Fields marked *nullable* may be null for a significant portion of the initial corpus.
 
 **nodes table:**
 ```
@@ -445,11 +447,11 @@ Norm
   │   └── Capítulo I
   │       ├── Artículo 1                   1 chunk per article
   │       └── Artículo 2
-  ├── Disposición adicional 1              1 chunk each
-  ├── Disposición transitoria 1            1 chunk each
-  ├── Disposición derogatoria 1            1 chunk each
-  ├── Disposición final 1                  1 chunk each
-  └── Anexo I                              1 chunk per annex (subdivided if long)
+  ├── Additional provision 1               1 chunk each
+  ├── Transitional provision 1             1 chunk each
+  ├── Repealing provision 1                1 chunk each
+  ├── Final provision 1                    1 chunk each
+  └── Annex I                              1 chunk per annex (subdivided if long)
 ```
 
 The BOE API's XML format preserves this hierarchy natively — chunking is a tree parse, not a text split.
@@ -480,7 +482,7 @@ One Qdrant point per article / disposición / annex chunk. Full text lives in th
 {
     "norm_id":      "BOE-A-2020-11043",
     "chunk_id":     "BOE-A-2020-11043-art-5",
-    "chunk_type":   "article",             # article | preamble | disposition | annex
+    "chunk_type":   "article",             # article | preamble | provision | annex
     "hierarchy": {
         "title":    "Título I",
         "chapter":  "Capítulo II",
@@ -712,7 +714,24 @@ Text input → `POST /api/query`. Two-panel output:
 
 ---
 
-## 14. Infrastructure
+## 14. Error Handling Strategy
+
+The pipeline follows **graceful degradation with explicit failure logging**: the daily run never silently produces bad data, but also never hard-blocks on data quality issues. Failures are always visible in Dagster; the platform keeps serving with the last valid state.
+
+| Failure mode | Response | Blocking? |
+|---|---|---|
+| Unmapped source term (adapter gap) | Write `norm_type = "unknown"`, log warning. Alert if > 1% of day's norms are unknown — indicates stale adapter. | No |
+| Missing identity field (`norm_id`, relationship endpoints) | Drop record, log. Count surfaced in Dagster run summary. | No |
+| Missing enrichment field (`ministry_wikidata_id`, `territory_code`, etc.) | Write null, proceed. | No |
+| BOE API unreachable | Retry Bronze asset 3× with exponential backoff. On final failure: alert fires, asset marked failed. Platform serves yesterday's state. | No (previous data intact) |
+| Neo4j write failure mid-batch | Re-run asset — all writes are `MERGE` by `norm_id` (idempotent upsert). Converges to correct state on retry. | No |
+| Gold ontology asset check fails | Non-blocking flag in Dagster UI. Downstream assets still run. Operator prompted to update adapter. | No |
+| Adapter loads with invalid canonical target | Pydantic hard-fails at startup. Caught in CI before deployment. | Yes (intentional — developer error) |
+
+---
+
+## 15. Infrastructure
+
 
 ### Docker Compose services
 
@@ -793,7 +812,7 @@ Same `docker-compose.yml`. The `api` service runs with hot-reload (`uvicorn --re
 
 ---
 
-## 15. Daily Incremental Ingestion
+## 16. Daily Incremental Ingestion
 
 Dagster scheduler triggers at 00:30 daily (BOE publishes by midnight).
 
