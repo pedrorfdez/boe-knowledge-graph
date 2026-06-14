@@ -1,0 +1,28 @@
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - certbot_certs:/etc/letsencrypt:ro
+    depends_on:
+      - api
+
+  api:
+    # In production: no bind mount — image is the source of truth
+    volumes: []
+    # In production: no --reload
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+
+  dagster-webserver:
+    volumes:
+      - dagster_home:/opt/dagster/dagster_home
+
+  dagster-daemon:
+    volumes:
+      - dagster_home:/opt/dagster/dagster_home
+
+volumes:
+  certbot_certs:
