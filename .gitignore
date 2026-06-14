@@ -10,3 +10,14 @@ minio/data/
 postgres/data/
 qdrant/data/
 elasticsearch/data/
+*.pyo
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+build/
+.DS_Store
+*.log
+redis/data/
