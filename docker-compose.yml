@@ -14,7 +14,7 @@ services:
       NEO4J_server_memory_heap_initial__size: 1G
       NEO4J_server_memory_heap_max__size: 2G
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:7474"]
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:7474"]
       interval: 10s
       timeout: 5s
       retries: 15
@@ -27,7 +27,7 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:6333/readyz"]
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/6333' 2>/dev/null && echo ok || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -101,7 +101,7 @@ services:
       - "3000:3000"
     command: dagster-webserver -h 0.0.0.0 -p 3000 -w /opt/dagster/app/workspace.yaml
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/server_info"]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:3000/server_info')\""]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -197,7 +197,7 @@ services:
     volumes:
       - ./api:/app
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
       interval: 10s
       timeout: 5s
       retries: 10
