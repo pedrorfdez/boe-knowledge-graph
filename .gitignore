@@ -1,0 +1,12 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+dist/
+.dagster/
+neo4j/data/
+minio/data/
+postgres/data/
+qdrant/data/
+elasticsearch/data/
