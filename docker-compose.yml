@@ -122,7 +122,7 @@ services:
       QDRANT_URL: http://qdrant:6333
       ELASTICSEARCH_URL: http://elasticsearch:9200
       REDIS_URL: redis://redis:6379
-      BOE_PROJECT_ROOT: /boe
+      LEGISLATION_ROOT: /legislation
     depends_on:
       postgres:
         condition: service_healthy
@@ -133,7 +133,8 @@ services:
     volumes:
       - ./pipeline:/opt/dagster/app
       - dagster_home:/opt/dagster/dagster_home
-      - .:/boe
+      - ./adapters:/legislation/adapters
+      - ./ontology:/legislation/ontology
 
   dagster-daemon:
     build:
@@ -156,7 +157,7 @@ services:
       QDRANT_URL: http://qdrant:6333
       ELASTICSEARCH_URL: http://elasticsearch:9200
       REDIS_URL: redis://redis:6379
-      BOE_PROJECT_ROOT: /boe
+      LEGISLATION_ROOT: /legislation
     depends_on:
       postgres:
         condition: service_healthy
@@ -167,7 +168,8 @@ services:
     volumes:
       - ./pipeline:/opt/dagster/app
       - dagster_home:/opt/dagster/dagster_home
-      - .:/boe
+      - ./adapters:/legislation/adapters
+      - ./ontology:/legislation/ontology
 
   api:
     build:

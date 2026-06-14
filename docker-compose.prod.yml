@@ -17,12 +17,20 @@ services:
     command: uvicorn main:app --host 0.0.0.0 --port 8000
 
   dagster-webserver:
+    environment:
+      LEGISLATION_ROOT: /legislation
     volumes:
       - dagster_home:/opt/dagster/dagster_home
+      - ./adapters:/legislation/adapters
+      - ./ontology:/legislation/ontology
 
   dagster-daemon:
+    environment:
+      LEGISLATION_ROOT: /legislation
     volumes:
       - dagster_home:/opt/dagster/dagster_home
+      - ./adapters:/legislation/adapters
+      - ./ontology:/legislation/ontology
 
 volumes:
   certbot_certs:
